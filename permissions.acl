@@ -1,0 +1,123 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Sample access control list.
+ */
+
+rule HostCanInstantiateApartments {
+    description: "Host can instantiate a new apartment"
+    participant: "org.example.travelchain.Host"
+    operation: CREATE
+    resource: "org.example.travelchain.Apartment"
+    action: ALLOW
+}
+
+rule HostCanManageOwnApartments {
+    description: "Host can READ, UPDATE, DELETE own apartments"
+    participant(h): "org.example.travelchain.Host"
+    operation: READ, UPDATE, DELETE
+    resource(a): "org.example.travelchain.Apartment"
+    condition: (a.owner.getIdentifier() == h.getIdentifier())
+    action: ALLOW
+}
+
+rule HostCanSetCheckInReservationState {
+    description: "Host can check in reservation only for his own apartments"
+    participant(h): "org.example.travelchain.Host"
+    operation: CREATE
+    resource(tx): "org.example.travelchain.CheckIn"
+    condition: (tx.reservation.apartment.owner.getIdentifier() == h.getIdentifier())
+    action: ALLOW
+}
+
+rule HostCanSetCheckOutReservationState {
+    description: "Host can check out reservation only for his own apartments"
+    participant(h): "org.example.travelchain.Host"
+    operation: CREATE
+    resource(tx): "org.example.travelchain.CheckOut"
+    condition: (tx.reservation.apartment.owner.getIdentifier() == h.getIdentifier())
+    action: ALLOW
+}
+
+rule HostCanFireReservationPayment {
+    description: "Host can initiate reservation payment"
+    participant(h): "org.example.travelchain.Host"
+    operation: CREATE
+    resource(tx): "org.example.travelchain.ReservationPayment"
+    condition: (tx.reservation.apartment.owner.getIdentifier() == h.getIdentifier())
+    action: ALLOW
+}
+
+
+rule GuestCanCreateReservations {
+  description: "Guest can create a new reservation"
+  participant: "org.example.travelchain.Guest"
+  operation: CREATE
+  resource: "org.example.travelchain.Reservation"
+  action: ALLOW
+}
+
+rule GuestCanReadOwnReservations {
+  description: "Guest can read own reservations"
+  participant(g): "org.example.travelchain.Guest"
+  operation: READ
+  resource(r): "org.example.travelchain.Reservation"
+  condition: (r.owner.getIdentifier() == g.getIdentifier())
+  action: ALLOW
+}
+
+rule GuestCanConfirmReservation {
+  description: "Guest can confirm a reservation"
+  participant(g): "org.example.travelchain.Guest"
+  operation: CREATE
+  resource(tx): "org.example.travelchain.ConfirmReservation"
+  condition: (tx.reservation.owner.getIdentifier() == g.getIdentifier())
+  action: ALLOW
+}
+
+rule GuestCanCancelReservation {
+  description: "Guest can cancel a reservation"
+  participant(g): "org.example.travelchain.Guest"
+  operation: CREATE
+  resource(tx): "org.example.travelchain.CancelReservation"
+  condition: (tx.reservation.owner.getIdentifier() == g.getIdentifier())
+  action: ALLOW
+}
+
+
+
+rule SystemACL {
+  description:  "System ACL to permit all access"
+  participant: "org.hyperledger.composer.system.Participant"
+  operation: ALL
+  resource: "org.hyperledger.composer.system.**"
+  action: ALLOW
+}
+
+rule NetworkAdminUser {
+    description: "Grant business network administrators full access to user resources"
+    participant: "org.hyperledger.composer.system.NetworkAdmin"
+    operation: ALL
+    resource: "**"
+    action: ALLOW
+}
+
+rule NetworkAdminSystem {
+    description: "Grant business network administrators full access to system resources"
+    participant: "org.hyperledger.composer.system.NetworkAdmin"
+    operation: ALL
+    resource: "org.hyperledger.composer.system.**"
+    action: ALLOW
+}
